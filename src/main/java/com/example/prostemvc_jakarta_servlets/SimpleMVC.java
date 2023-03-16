@@ -5,6 +5,11 @@ import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.Map;
 
 @WebServlet(name = "SimpleMVC", value = "/SimpleMVC")
 public class SimpleMVC extends HttpServlet {
@@ -33,10 +38,9 @@ public class SimpleMVC extends HttpServlet {
             rd = sc.getRequestDispatcher("/mvc/ReadDatabase.jsp");
             rd.forward(request, response);
             return;
-        } else if ( site.equals("Site3")) {
-            System.out.println("In the servlet. . . Site3");
-            rd = sc.getRequestDispatcher("/mvc/Site3.jsp");
-            rd.forward(request, response);
+        } else if ( site.equals("CreatePerson")) {
+            System.out.println("In the servlet. . . CreatePerson");
+            response.sendRedirect("CreatePersonForm.html");
             return;
         } else {
             System.out.println("In the servlet. . . Home");
@@ -46,8 +50,67 @@ public class SimpleMVC extends HttpServlet {
         }
     }
 
+    private static boolean createPerson(String fname, String lname, String city){
+        try {
+
+            Class.forName("org.postgresql.Driver");
+            String url = "jdbc:postgresql://trumpet.db.elephantsql.com:5432/vppbhvzu";
+            String username = "vppbhvzu";
+            String password = "jSQW8UyiwBWLu9xSsjYnRzV3NLU3J8Xs";
+            Connection conn = DriverManager.getConnection(url, username, password);
+            Statement stmt = conn.createStatement();
+            String sql = "INSERT INTO person (fname, lname, city) VALUES (' " + fname + "', '" + lname + "', '" + city + "');       ";
+            boolean isSuccess = stmt.execute(sql);
+
+            stmt.close();
+            conn.close();
+            return isSuccess;
+
+
+        }
+        catch (Exception e){
+            System.out.println("exception: " + e);
+        }
+        return false;
+    }
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher homeDispatcher = getServletConfig()
+                .getServletContext()
+                .getRequestDispatcher("/mvc/Home.jsp");
+        if (request.getParameterMap().containsKey("site") == false) {
+            homeDispatcher.forward(request, response);
+            return;
+        } else {
+            String site = request.getParameter("site");
+            if ( site.equals("CreatePerson")){
+                System.out.println("hello from doPost in SimpleMVC servlet");
+                Map<String, String[]> parametersMap = request.getParameterMap();
+                System.out.println(parametersMap);
+                boolean createdSuccessfully = createPerson(
+                        parametersMap.get("fname")[0],
+                        parametersMap.get("lname")[0],
+                        parametersMap.get("city")[0]);
+//                if(createdSuccessfully){
+                if(true){
+                    response.sendRedirect("SuccessfullyCreatedPerson.html");
+                    return;
+                }else{
+                    response.sendRedirect("FailedToCreatePerson.html");
+                    return;
+                }
+//                parametersMap.get("fname");
+//                parametersMap.get("lname");
+//                parametersMap.get("city");
+//                response.sendRedirect("CreatePerson");
+//                return;
+            }
+            else{
+                homeDispatcher.forward(request, response);
+                return;
+            }
+        }
 
     }
 }
